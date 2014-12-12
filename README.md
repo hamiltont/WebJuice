@@ -4,13 +4,16 @@ Requirements and Installation
 
 Requires: MySQL, Python 2.7
 
-**Easy setup:**
+**Installation**
 
 * Clone this repo, cd into new directory
 * Run `virtualenv env`, then `source env/bin/activate`
 * Run `pip install -r requirements.txt`
-* Run `python webapp.py`
 
+**Launch**
+
+* Turn on MySQL
+* Run `python webapp.py`
 
 Why Python, why Flask?
 ----------------------

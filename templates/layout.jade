@@ -1,0 +1,19 @@
+!!! 5
+html(lang="en")
+  head
+    title Frameworks Continuous
+    meta(charset='utf-8')
+    
+    // Bootstrap core
+    link(href='/bootstrap/css/bootstrap.min.css', rel='stylesheet')
+    link(href='/bootstrap/css/bootstrap-theme.min.css', rel='stylesheet')
+  body
+    include header
+
+    block content
+
+    // Bootstrap core JavaScript
+    // Placed at the end of the document so the pages load faster
+    script(src='/jquery/jquery-1.11.1.min.js')
+    script(src='/bootstrap/js/bootstrap.min.js')
+    

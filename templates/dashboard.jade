@@ -1,0 +1,74 @@
+extends layout
+
+mixin makepan(test)
+  .panel.panel-default
+    .panel-heading.text-center
+      sub: small: | 80
+      span.text-under: | &nbsp;&nbsp;&nbsp; 
+      span.text-under= test
+      span.text-under: | &nbsp;&nbsp;&nbsp; 
+      sub: small: | 127
+    table.table.table-hover.table-condensed.table-borderless
+      tr
+        td.col-xs-1: | - OpenResty 
+        td.col-md-1: | 127
+      tr
+        td.col-xs-1: | - PHP
+        td.col-md-1: | 127
+      tr
+        td.col-xs-1: | - Cpoll
+        td.col-md-1: | 93
+      tr
+        td.col-xs-1: | - HttpService
+        td.col-md-1: | 80
+
+block content
+  style.
+    .table-borderless>tbody>tr>td, .table-borderless>tbody>tr>th { 
+      border-top: none; 
+    }
+    .text-under {
+      text-decoration: underline;
+    }
+  .container
+    .row
+      .col-md-4
+        .panel.panel-default
+          .panel-heading.text-center
+            sub: small: | 80
+            span.text-under: | &nbsp;&nbsp;&nbsp;JSON&nbsp;&nbsp;&nbsp;
+            sub: small: | 127
+          table.table.table-hover.table-condensed.table-borderless
+            tr
+              td.col-xs-1: | - OpenResty 
+              td.col-md-1: | 127
+            tr
+              td.col-xs-1: | - PHP
+              td.col-md-1: | 127
+            tr
+              td.col-xs-1: | - Cpoll
+              td.col-md-1: | 93
+            tr
+              td.col-xs-1: | - HttpService
+              td.col-md-1: | 80
+      .col-md-4
+        +makepan('Fortune')
+      .col-md-4
+        +makepan('Single Query')
+    .row
+      .col-md-4
+        +makepan('Multiple Query')
+      .col-md-4
+        +makepan('Plaintext')
+      .col-md-4
+        +makepan('Update')
+
+
+
+
+
+
+
+
+
+

@@ -7,7 +7,9 @@ from flask_debugtoolbar_lineprofilerpanel.profile import line_profile
 
 import models
 
-app = Flask(__name__)
+# Setting static url means we use /js/filename.js 
+# versus /static/js/filename.js
+app = Flask(__name__, static_url_path='')
 app.config['SECRET_KEY'] = 'this is a very secret key :)'
 
 # When we are in debug mode, expose a nice toolbar
@@ -27,14 +29,41 @@ app.config['DEBUG_TB_PANELS'] = [
 # Enable JADE templates
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
 
-list_in_py = range(10)
-
 @app.route("/")
-@app.route('/hello/<name>')
 @line_profile
-def hello(name=None):
+def dash(name=None):
   models.create_database()
-  return render_template('hello.jade', youAreUsingJade=True, name=name, values=list_in_py, list_in_py=list_in_py) 
+  return render_template('dashboard.jade', youAreUsingJade=True)
 
+@app.route("/lang")
+@line_profile
+def lang(name=None):
+  models.create_database()
+  return render_template('lang.jade', youAreUsingJade=True)
+
+@app.route("/queue")
+@line_profile
+def queue(name=None):
+  models.create_database()
+  return render_template('queue.jade', youAreUsingJade=True)
+
+@app.route("/admin")
+@line_profile
+def admin(name=None):
+  models.create_database()
+  return render_template('admin.jade', youAreUsingJade=True)
+
+@app.route("/about")
+@line_profile
+def about(name=None):
+  models.create_database()
+  return render_template('about.jade', youAreUsingJade=True)
+
+@app.route("/login")
+@line_profile
+def login(name=None):
+  models.create_database()
+  return render_template('login.jade', youAreUsingJade=True)
+  
 app.run()
 

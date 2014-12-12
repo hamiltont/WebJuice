@@ -1,0 +1,33 @@
+.alert.alert-warning(role='alert',style="margin-bottom:0; padding: 5px") 
+  button.close(data-dismiss='alert') x
+  strong Warning: 
+  | These results should not (yet) be compared to the official round results. 
+  a.alert-link Read More
+.navbar.navbar-default.navbar-static-top(role='navigation')
+  .container
+    .navbar-header
+      button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse')
+        span.sr-only Toggle navigation
+        span.icon-bar
+        span.icon-bar
+        span.icon-bar
+      a.navbar-brand(href='/') Framework Continuous
+    .navbar-collapse.collapse
+      ul.nav.navbar-nav
+        li: a(href='/lang') Languages
+        li: a(href='/queue') Queue
+        li.dropdown
+          a.dropdown-toggle(href='/admin', data-toggle='dropdown')
+            | Admin 
+            span.caret
+          ul.dropdown-menu(role='menu')
+            li: a(href='/admin') Action
+            li: a(href='/admin') Another action
+            li: a(href='/admin') Something else here
+            li.divider
+            li.dropdown-header Nav header
+            li: a(href='/admin') Separated link
+            li: a(href='/admin') One more separated link
+      ul.nav.navbar-nav.navbar-right
+        li: a(href='/about') About
+        li.active: a(href='/login') Log in with Github
