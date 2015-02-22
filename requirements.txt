@@ -3,5 +3,7 @@ python-statsd==1.7.2
 quick-orm==0.4.4
 toolkit-library==0.4.8
 wsgiref==0.1.2
+fabric
+docker-py
 pyaml
 colorlog

@@ -22,6 +22,8 @@ for brief periods to enable rapidly gathering many trials)
 #     - plan for NA!
 #   - strategy where results are based on commit
 #
+# Consider using docker run --add-hosts eventually
+#
 #
 # Initial simplification: Using port mapping, assume all computers are 
 # on the same physical host. 
@@ -30,15 +32,24 @@ for brief periods to enable rapidly gathering many trials)
 #   database is at localhost:2442
 #   client is at localhost:2332
 
-import docker
-import docker_utils as dutil
 import logging
 import logging.config
+import fabric
 
-from pprint import pformat
+from fabric.api import env,run,execute,hosts
+from fabric.context_managers import cd
+from pprint import pformat,pprint
 from getpass import getuser
 from datetime import datetime
 
+import docker
+import docker_utils as dutil
+import utils
+
+import subprocess
+import os
+import json
+import exceptions
 
 from streamlogger import use_logger
 shell_logger = use_logger(__name__)
@@ -56,138 +67,164 @@ class TFBExecutor(object):
 
 class DockerExecutor(TFBExecutor):
 
-  def __init__(self, client, **kwargs):
+  def __init__(self, cli, host_ip, **kwargs):
     super(DockerExecutor, self).__init__(**kwargs)
-    self.client = client
-    self.cimage ="%s/tfb-client" % getuser()
-    self.simage ="%s/tfb-server" % getuser()
-    self.dimage ="%s/tfb-dbases" % getuser()
+    self.cli = cli
+    self.host_ip = host_ip
 
-    self.ctag   = "%s:%s" % (self.cimage, self.commit)
-    self.stag   = "%s:%s" % (self.simage, self.commit)
-    self.dtag   = "%s:%s" % (self.dimage, self.commit)
-
-    alive = len(self.client.containers())
+    alive = len(self.cli.containers())
     if alive != 0:
       warn("%s containers are currently running, which will impact your results", alive)
 
-    if len(self.client.images(name=self.image)) != 0:
-      warn("Container %s already exists, removing...", self.image)
-      self.client.remove_image(image=self.tag, force=True)
+  def __enter__(self):
 
-  def setup_client_host(self): 
-    client = self.client
-  
-    # Ensure container is built
-    info("Building container %s", self.ctag)
-    build_start = datetime.now()
-    for line in client.build(path='docker/client', 
-      tag=self.ctag, stream=True, 
-      quiet=False, rm=True):
-      debug("%s: %s", self.ctag, line.strip())
-    info("Built container %s in %s", self.ctag, datetime.now() - build_start)
+    print("Building base SSH image")
+    self.base_image = getuser() + '/tfb_base'
+    self.build_container('docker/ssh', self.base_image)
 
-  def start_client_container(self): 
-    client = self.client
-  
-    # Ensure tfb-client is not already being run
-    running = dutil.is_image_being_run(client, self.cimage)
-    if running[0]:
-      warn("Container %s is already running the client image, halting", dutil.container_str(running[1]))
+    print("Building base TFB images")
+    self.sport_internal = 22
+    self.cport_internal = 22
+    self.dport_internal = 22
+    self.client_id = self.start_container(self.base_image)
+    self.databa_id = self.start_container(self.base_image)
+    self.server_id = self.start_container(self.base_image,
+      links=[(self.client_id, 'client'),(self.databa_id, 'database')])
+    self.sport = self.cli.port(self.server_id, self.sport_internal)[0]['HostPort']
+    self.cport = self.cli.port(self.client_id, self.cport_internal)[0]['HostPort']
+    self.dport =  self.cli.port(self.databa_id, self.dport_internal)[0]['HostPort']
 
+    (self.shost, self.dhost, self.chost) = (self.host_ip, self.host_ip, self.host_ip)
 
-    '''
+    self.server_fab = "root@%s:%s" % (self.shost, self.sport)
+    self.client_fab = "root@%s:%s" % (self.chost, self.cport)
+    self.databa_fab = "root@%s:%s" % (self.dhost, self.dport)
 
-    # Run container
-    #
-    # Note: Container will vacuum up any public key files from /tmp/zz_ssh
-    #       and set them up for passwordless SSH access, so all we have to 
-    #       do here is mount the folder containing our public key files. We
-    #       assume that's the folder where the client_identity_file is from
-    #
-    print "DOCKER: Starting %s" % repo
-    client = c.create_container(repo, volumes=[ '/tmp/zz_ssh' ])
-    key_dir = os.path.abspath(os.path.dirname(os.path.expanduser(self.client_identity_file)))
-    print "DOCKER: Client will search %s for public keys" % key_dir
-    mounts={
-      key_dir : { 'bind': '/tmp/zz_ssh' }, 
-    }
-    
-    lxc_options = {}
-    if self.docker_client_cpuset:
-      lxc_options['lxc.cgroup.cpuset.cpus'] = ",".join(str(x) for x in self.docker_client_cpuset)
-      print "DOCKER: Client allowing processors [%s]" % lxc_options['lxc.cgroup.cpuset.cpus']
+    try:
+      # Sets up fabric SSH library
+      env.key_filename = 'docker/ssh/id_rsa'   # Use private key file
+      env.abort_exception = exceptions.OSError # Do not throw SystemExit on non-zero command
+
+      print("- Installing server software into base TFB server image %s" % self.server_id)
+      print("- Using ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.sport, os.path.dirname(os.path.realpath(__file__)), self.shost))
+      execute(self.deploy_server, hosts=[self.server_fab])
+
+      print("- Installing client software into base TFB client image %s" % self.client_id)
+      print("- Using ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.cport, os.path.dirname(os.path.realpath(__file__)), self.chost))
+      execute(self.deploy_client, hosts=[self.server_fab])
+
+      print("- Installing database software into base TFB database image %s" % self.databa_id)
+      print("- Using ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.dport, os.path.dirname(os.path.realpath(__file__)), self.dhost))
+      execute(self.deploy_database, hosts=[self.server_fab])
+    except Exception:
+      self.logger.error("- Software Installation Failed, Unable to Continue!")
+      self.__exit__(None, None, None)
+      raise
+
+    print "Base software installation complete, saving containers as images"
+
+    self.cli.commit(container=self.server_id, 
+      repository=getuser()+'/tfb_server',
+      tag=self.commit,
+      message='Autogenerated by TFB Looper',
+      author='Hamilton Turner')
+    self.cli.commit(container=self.client_id, 
+      repository=getuser()+'/tfb_client',
+      tag=self.commit,
+      message='Autogenerated by TFB Looper',
+      author='Hamilton Turner')
+    self.cli.commit(container=self.databa_id, 
+      repository=getuser()+'/tfb_databa',
+      tag=self.commit,
+      message='Autogenerated by TFB Looper',
+      author='Hamilton Turner')
+    return self
+
+  def __exit__(self, type, value, traceback):
+    fabric.network.disconnect_all()
+
+    ids=['server_id','client_id','databa_id']
+    for id in ids:
+      if hasattr(self, id):
+        warn("Killing container %s", getattr(self,id))
+        self.cli.kill(getattr(self,id))
+
+  def deploy_server(self):
+    run('apt-get update -qq && apt-get install -yqq git-core python2.7 python-pip', **shell_logger)
+    run('git clone https://github.com/hamiltont/FrameworkBenchmarks.git /root/FrameworkBenchmarks', **shell_logger)
+
+    # Create user to run the frameworks
+    run('adduser --disabled-password --gecos "" tfbrunner')
+    run('echo "tfbrunner ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers')
+
+    with cd('/root/FrameworkBenchmarks'):
+      run('pip install -r config/python_requirements.txt', **shell_logger)
+
+      return
+      command = 'python toolset/run-tests.py --install server --client-user root '
+      command += '--runner-user tfbrunner --database-user root --install-only '
+      command += '--test ""'
+      run(command, **shell_logger)
+
+  def deploy_client(self):
+    with cd('/root/FrameworkBenchmarks'): 
+      command = 'python toolset/run-tests.py --install client --verbose --install-only '
+      command += '--client-user root --runner-user tfbrunner --database-user root '
+      command += "--client-host client --client-identity-file /root/.ssh/id_rsa"
+      run(command, **shell_logger)
+
+  def deploy_database(self):
+    '''Configues a database on self.dhost, requires SSH to be listening on port 22
+    as we have no way to modify both the internal SFTP command and the internal SSH
+    command'''
+    # TODO the databases are restarted before each framework test, so eventually we 
+    # would like to have that happen inside TFB in a manner that works inside Docker
+
+    # If we could run login -f root as the "bash command" we could avoid all those 
+    # nasty locale errors. See https://github.com/docker/docker/issues/2424
+
+    with cd('/root/FrameworkBenchmarks'):
+      command = 'python toolset/run-tests.py --install database --verbose --install-only '
+      command += '--client-user root --runner-user tfbrunner --database-user root '
+      command += "--database-host database --database-identity-file /root/.ssh/id_rsa"
+      run(command, **shell_logger)
+
+      # Manually start mongo, it uses Upstart and that's not available inside
+      # Docker
+      # See https://github.com/docker-library/mongo/blob/d9fb48dbdb0b9c35d35902429fe1a28527959f25/2.4/Dockerfile
       
-      # Update threads to be correct e.g. run wrk with threads == client logical processors
-      self.threads = len(self.docker_client_cpuset)
+      # Start mysql, because "sudo start mysql" uses Upstart
+      # run('service mysql start', **shell_logger)
+      
+  def start_container(self, image, port=22, network='bridge', links=[]):
+    # env = {"SSH_PORT": str(port)}
+    env = {"SSH_PORT": str(22)}
+    container = self.cli.create_container(image=image, detach=True, 
+      environment=env, tty=True, ports=[port])
+    self.cli.start(container=container['Id'],
+      publish_all_ports=True, network_mode=network,
+      links=links)
+    debug("Started %s in %s", image, container['Id'])
+    return container['Id']
 
-      # Update max_threads (whcih is used only by frameworks) to be correct == logical processors 
-      # allowed for this server
-      self.max_threads = len(self.docker_server_cpuset)
-
-      print "DOCKER: Updated `threads` to %s and `max_threads` to %s" % (self.threads, self.max_threads)
-    if self.docker_client_ram:
-      # Set (swap+ram)==(ram) to disable swap
-      # See http://stackoverflow.com/a/26482080/119592
-      if self.docker_client_ram < 800:
-        print "DOCKER: ERROR: wrk requires at least 800MB of RAM. Increasing %s to 850" % self.docker_client_ram
-        self.docker_client_ram = 850
-        print "DOCKER: WARNING: If you are running wrk and the server on the same host, be sure you have enough mem for both!"
-      lxc_options['lxc.cgroup.memory.max_usage_in_bytes']= "%sM" % self.docker_client_ram
-      lxc_options['lxc.cgroup.memory.limit_in_bytes']    = "%sM" % self.docker_client_ram
-      print "DOCKER: Client allowing %s MB real RAM" % self.docker_client_ram
-    lxc = " ".join([ "--lxc-conf=\"%s=%s\""%(k,v) for k,v in lxc_options.iteritems()])
-    d_command = "sudo docker run -d %s --net=host -v %s:/tmp/zz_ssh %s" % (lxc, key_dir, repo)
-    
-    print "DOCKER: Running client container using:"
-    print "DOCKER: %s" % d_command
-    c.start(client, binds=mounts, network_mode='host', lxc_conf=lxc_options)
-
-    # Update SSH connection string 
-    #   Client container uses u/p root:root and port 2332 
-    self.client_ssh_string = "ssh -T -o StrictHostKeyChecking=no root@localhost -p 2332"
-    self.client_ssh_string += " -i " + self.client_identity_file
-
-    print "DOCKER: Master will use client SSH string %s" % self.client_ssh_string
-
-    self.docker_client_container = client
-    '''
-
-
-  def setup_database_host(self):
-    client = self.client
-
-    self.image ="%s/tfb-db" % getuser()
-    self.tag   = "%s:%s" % (self.image, self.commit)
-  
-    # Ensure container is built
-    info("Building container %s", self.tag)
+  def build_container(self, dockerfile_path, container_tag):
+    info("Building container %s", container_tag)
     build_start = datetime.now()
-    for line in client.build(path='docker/database', 
-      tag=self.tag, stream=True, 
+    for line in self.cli.build(path=dockerfile_path, 
+      tag=container_tag, stream=True, 
       quiet=False, rm=True):
-      debug("%s: %s", self.tag, line.strip())
-    info("Built container %s in %s", self.tag, datetime.now() - build_start)
+      debug("%s: %s", container_tag, json.loads(line)['stream'].rstrip())
+    debug("Built container %s in %s", container_tag, datetime.now() - build_start)
 
-    pass
 
-  def setup_server_host(self):
-
-    self.image ="%s/tfb-server" % getuser()
-    self.tag   = "%s:%s" % (self.image, self.commit)
-  
-    # Ensure container is built
-    
-    info("Building container %s", self.tag)
-    build_start = datetime.now()
-    for line in client.build(path='docker/server', 
-      tag=self.tag, stream=True, 
-      quiet=False, rm=True):
-      debug("%s: %s", self.tag, line.strip())
-    info("Built container %s in %s", self.tag, datetime.now() - build_start)
-
-    pass
-
+def get_boot2docker_environ():
+  boot = '$(/usr/local/bin/boot2docker shellinit 2>/dev/null)'
+  host = subprocess.check_output(boot + ' && echo $DOCKER_HOST', shell=True)
+  cert = subprocess.check_output(boot + ' && echo $DOCKER_CERT_PATH', shell=True)
+  tls  = subprocess.check_output(boot + ' && echo $DOCKER_TLS_VERIFY', shell=True)
+  os.environ['DOCKER_CERT_PATH'] = cert.rstrip()
+  os.environ['DOCKER_HOST'] = host.rstrip()
+  os.environ['DOCKER_TLS_VERIFY'] = tls.rstrip()
 
 if __name__ == "__main__":
   c = utils.parse_log_config('../logging.yaml')
@@ -198,12 +235,13 @@ if __name__ == "__main__":
   p_logger = logging.getLogger('paramiko')
   p_logger.setLevel(logging.INFO)
 
-  client = docker.Client('127.0.0.1:5555', version='1.12')
+  get_boot2docker_environ()
+  from docker.utils import kwargs_from_env
+  client = docker.Client(**kwargs_from_env(assert_hostname=False))
 
-  executor = DockerExecutor(client, commit=12)
-  executor.setup_client_host()
-  executor.setup_database_host()
-  executor.setup_server_host()
+  host_ip = subprocess.check_output('/usr/local/bin/boot2docker ip', shell=True).rstrip()
+  with DockerExecutor(client, host_ip=host_ip, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3') as executor:
+    print "doing stuff"
 
   executor.install_client_host()
 

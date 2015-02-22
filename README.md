@@ -15,6 +15,14 @@ Requires: MySQL, Python 2.7
 * Turn on MySQL
 * Run `python webapp.py`
 
+**Launch on OS X**
+
+* Turn on Docker VM and launch MySQL Container
+* * `boot2docker start`
+* * `$(boot2docker shellinit)`
+* * `docker run -p 3306:3306 -e MYSQL_ROOT_PASSWORD=toor -d mysql`
+* * `boot2docker ip`
+
 Why Python, why Flask?
 ----------------------
 
