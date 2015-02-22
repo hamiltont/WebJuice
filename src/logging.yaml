@@ -1,0 +1,35 @@
+---
+# Configuration for python's logging
+#   See https://docs.python.org/2/library/logging.config.html
+#
+
+version: 1
+# Prevents completely overwriting loggers
+# defined at the module level
+disable_existing_loggers: False
+formatters:
+  simple:
+    format: "%(name)s %(levelname).8s %(funcName)s - %(message)s"
+  colored_stream:
+    ():  colorlog.ColoredFormatter
+    format: "%(log_color)s%(name)s.%(funcName)s %(levelname)-8s%(reset)s %(blue)s%(message)s"
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+  colored_console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: colored_stream
+    stream: ext://sys.stdout
+#loggers:
+#  my_module:
+#    level: ERROR
+#    handlers: [console]
+#    propagate: no
+root:
+  level: DEBUG
+  handlers: [console]
+

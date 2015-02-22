@@ -33,10 +33,15 @@ for brief periods to enable rapidly gathering many trials)
 import docker
 import docker_utils as dutil
 import logging
+import logging.config
 
 from pprint import pformat
 from getpass import getuser
 from datetime import datetime
+
+
+from streamlogger import use_logger
+shell_logger = use_logger(__name__)
 
 class TFBExecutor(object):
   """A base model that will use our MySQL database"""
@@ -185,10 +190,14 @@ class DockerExecutor(TFBExecutor):
 
 
 if __name__ == "__main__":
-  logging.basicConfig(level=logging.DEBUG)
+  c = utils.parse_log_config('../logging.yaml')
+  logging.config.dictConfig(c)
 
-  # If using flask, pass logger = app.logger
-  logging.debug("Attempting to connect to 127.0.0.1:5555")
+  urllib3_logger = logging.getLogger('requests')
+  urllib3_logger.setLevel(logging.CRITICAL)
+  p_logger = logging.getLogger('paramiko')
+  p_logger.setLevel(logging.INFO)
+
   client = docker.Client('127.0.0.1:5555', version='1.12')
 
   executor = DockerExecutor(client, commit=12)
