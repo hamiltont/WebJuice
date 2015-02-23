@@ -82,6 +82,45 @@ class DockerExecutor(TFBExecutor):
     self.base_image = getuser() + '/tfb_base'
     self.build_container('docker/ssh', self.base_image)
 
+    # Sets up fabric SSH library
+    env.key_filename = 'docker/ssh/id_rsa'   # Use private key file
+    env.abort_exception = exceptions.OSError # Do not throw SystemExit on non-zero command
+
+    # TODO Utilize the tag to ensure they are the correct base image
+    server = len(self.cli.images(name=getuser()+'/tfb_server')) > 0
+    client = len(self.cli.images(name=getuser()+'/tfb_client')) > 0
+    databa = len(self.cli.images(name=getuser()+'/tfb_databa')) > 0
+
+    # Just start the base images, they are created
+    if server and client and databa:
+      # start things
+      info("Base images already exist, starting containers")
+      self.sport_internal = 22
+      self.cport_internal = 22
+      self.dport_internal = 22
+      self.client_id = self.start_container(getuser()+'/tfb_client:' + self.commit)
+      self.databa_id = self.start_container(getuser()+'/tfb_databa:' + self.commit)
+      self.server_id = self.start_container(getuser()+'/tfb_server:' + self.commit,
+        links=[(self.client_id, 'client'),(self.databa_id, 'database')])
+      self.sport = self.cli.port(self.server_id, self.sport_internal)[0]['HostPort']
+      self.cport = self.cli.port(self.client_id, self.cport_internal)[0]['HostPort']
+      self.dport =  self.cli.port(self.databa_id, self.dport_internal)[0]['HostPort']
+      (self.shost, self.dhost, self.chost) = (self.host_ip, self.host_ip, self.host_ip)
+
+      self.server_fab = "root@%s:%s" % (self.shost, self.sport)
+      self.client_fab = "root@%s:%s" % (self.chost, self.cport)
+      self.databa_fab = "root@%s:%s" % (self.dhost, self.dport)
+      try:
+        print("Turning database container on by running installation")
+        execute(self.deploy_database, hosts=[self.server_fab])
+      except OSError:
+        self.logger.error("turning on databases failed")
+    else:
+      self.create_base_images()
+
+    return self
+
+  def create_base_images(self):
     print("Building base TFB images")
     self.sport_internal = 22
     self.cport_internal = 22
@@ -101,20 +140,16 @@ class DockerExecutor(TFBExecutor):
     self.databa_fab = "root@%s:%s" % (self.dhost, self.dport)
 
     try:
-      # Sets up fabric SSH library
-      env.key_filename = 'docker/ssh/id_rsa'   # Use private key file
-      env.abort_exception = exceptions.OSError # Do not throw SystemExit on non-zero command
-
       print("- Installing server software into base TFB server image %s" % self.server_id)
-      print("- Using ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.sport, os.path.dirname(os.path.realpath(__file__)), self.shost))
+      print("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa tfb@%s" % (self.sport, os.path.dirname(os.path.realpath(__file__)), self.shost))
       execute(self.deploy_server, hosts=[self.server_fab])
 
       print("- Installing client software into base TFB client image %s" % self.client_id)
-      print("- Using ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.cport, os.path.dirname(os.path.realpath(__file__)), self.chost))
+      print("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.cport, os.path.dirname(os.path.realpath(__file__)), self.chost))
       execute(self.deploy_client, hosts=[self.server_fab])
 
       print("- Installing database software into base TFB database image %s" % self.databa_id)
-      print("- Using ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.dport, os.path.dirname(os.path.realpath(__file__)), self.dhost))
+      print("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.dport, os.path.dirname(os.path.realpath(__file__)), self.dhost))
       execute(self.deploy_database, hosts=[self.server_fab])
     except Exception:
       self.logger.error("- Software Installation Failed, Unable to Continue!")
@@ -147,31 +182,64 @@ class DockerExecutor(TFBExecutor):
     for id in ids:
       if hasattr(self, id):
         warn("Killing container %s", getattr(self,id))
-        self.cli.kill(getattr(self,id))
+        # self.cli.kill(getattr(self,id))
 
-  def deploy_server(self):
-    run('apt-get update -qq && apt-get install -yqq git-core python2.7 python-pip', **shell_logger)
-    run('git clone https://github.com/hamiltont/FrameworkBenchmarks.git /root/FrameworkBenchmarks', **shell_logger)
+  def deploy_server(self):    
+    # Create user to run the toolset
+    run('adduser --disabled-password --gecos "" tfb')
+    run('echo "tfb ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers')
+    
+    run('''mkdir /home/tfb/.ssh && \
+      for k in `ls /tmp/ssh/*.pub`; do \
+        cat $k >> /home/tfb/.ssh/authorized_keys; \
+      done && \
+      cp /tmp/ssh/* /home/tfb/.ssh && \
+      chown -R tfb:tfb /home/tfb/.ssh && \
+      chmod 700 /home/tfb/.ssh && \
+      chmod 600 /home/tfb/.ssh/authorized_keys && \
+      chmod 600 /home/tfb/.ssh/id_rsa''')
 
-    # Create user to run the frameworks
-    run('adduser --disabled-password --gecos "" tfbrunner')
+    # Update server connection info now that we no longer need root
+    self.server_fab = "tfb@%s:%s" % (self.shost, self.sport)
+    execute(self.deploy_server_as_tfb, hosts=[self.server_fab])
+
+  def deploy_server_as_tfb(self):
+    run('echo "export DEBIAN_FRONTEND=noninteractive" | cat - ~/.bashrc > /tmp/temp && mv /tmp/temp ~/.bashrc')
+
+    sudo('apt-get update -qq && apt-get install -yqq git-core python2.7 python-pip > /dev/null', user='root', pty=False)
+
+    # Provide killall command
+    sudo('apt-get install -qq psmisc > /dev/null', user='root', pty=False)
+    
+    run('git clone https://github.com/hamiltont/FrameworkBenchmarks.git ~/FrameworkBenchmarks', pty=False)
+
+    # Create user to run the applications
+    sudo('adduser --disabled-password --gecos "" tfbrunner', user='root')
     run('echo "tfbrunner ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers')
 
-    with cd('/root/FrameworkBenchmarks'):
-      run('pip install -r config/python_requirements.txt', **shell_logger)
+    # User tfbrunner needs read access to files owned by tfb e.g. the toolset
+    sudo('usermod -a -G tfb tfbrunner', user='root')
 
-      return
+    # User tfbrunner needs read write access to all framework folders owned by tfb e.g. the toolset
+    run('mkdir ~/FrameworkBenchmarks/results && chmod -R g+w ~/FrameworkBenchmarks/frameworks ~/FrameworkBenchmarks/results')
+
+    # Just a convenience thing - Currently TFB chown's the installs folder to tfbrunner
+    sudo('usermod -a -G tfbrunner tfb', user='root')
+
+    with cd('~/FrameworkBenchmarks'):
+      run('pip install --user -r config/python_requirements.txt')
+
       command = 'python toolset/run-tests.py --install server --client-user root '
       command += '--runner-user tfbrunner --database-user root --install-only '
       command += '--test ""'
-      run(command, **shell_logger)
+      run(command, pty=False)
 
   def deploy_client(self):
-    with cd('/root/FrameworkBenchmarks'): 
+    with cd('~/FrameworkBenchmarks'): 
       command = 'python toolset/run-tests.py --install client --verbose --install-only '
       command += '--client-user root --runner-user tfbrunner --database-user root '
-      command += "--client-host client --client-identity-file /root/.ssh/id_rsa"
-      run(command, **shell_logger)
+      command += '--client-host client --client-identity-file ~/.ssh/id_rsa'
+      run(command, pty=False)
 
   def deploy_database(self):
     '''Configues a database on self.dhost, requires SSH to be listening on port 22
@@ -183,11 +251,11 @@ class DockerExecutor(TFBExecutor):
     # If we could run login -f root as the "bash command" we could avoid all those 
     # nasty locale errors. See https://github.com/docker/docker/issues/2424
 
-    with cd('/root/FrameworkBenchmarks'):
+    with cd('~/FrameworkBenchmarks'):
       command = 'python toolset/run-tests.py --install database --verbose --install-only '
       command += '--client-user root --runner-user tfbrunner --database-user root '
-      command += "--database-host database --database-identity-file /root/.ssh/id_rsa"
-      run(command, **shell_logger)
+      command += '--database-host database --database-identity-file ~/.ssh/id_rsa'
+      run(command, pty=False)
 
       # Manually start mongo, it uses Upstart and that's not available inside
       # Docker
@@ -240,8 +308,17 @@ if __name__ == "__main__":
   client = docker.Client(**kwargs_from_env(assert_hostname=False))
 
   host_ip = subprocess.check_output('/usr/local/bin/boot2docker ip', shell=True).rstrip()
+
+  def framework_run():
+    with cd('~/FrameworkBenchmarks'):
+      command = 'python toolset/run-tests.py --install server --verbose --test haywire --runner-user tfbrunner '
+      command += '--client-user root   --client-host client     --client-identity-file ~/.ssh/id_rsa '
+      command += '--database-user root --database-host database --database-identity-file ~/.ssh/id_rsa '
+      run(command, **shell_logger)
+
   with DockerExecutor(client, host_ip=host_ip, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3') as executor:
-    print "doing stuff"
+    execute(framework_run, hosts=[executor.server_fab])
+
 
   executor.install_client_host()
 
