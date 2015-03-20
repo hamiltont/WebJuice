@@ -7,3 +7,8 @@ fabric
 docker-py
 pyaml
 colorlog
+Flask
+flask-debugtoolbar
+flask-debugtoolbar-lineprofilerpanel
+peewee
+pyjade

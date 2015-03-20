@@ -1,4 +1,8 @@
 
+# NOTE: This is pre-alpha
+
+This is a fancy way of saying it doesn't do anything useful yet, and probably won't run on your setup
+
 Requirements and Installation
 -----------------------------
 
