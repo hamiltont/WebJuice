@@ -15,12 +15,13 @@ logger = logging.getLogger('peewee')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-mysql_db = MySQLDatabase('foobarb', host='127.0.0.1', user='root', password='')
+# mysql_db = MySQLDatabase('foobarb', host='127.0.0.1', user='root', password='')
+database = SqliteDatabase('temp.db')
 
 class BaseModel(Model):
-  """A base model that will use our MySQL database"""
+  """A base model that will use our database"""
   class Meta:
-    database = mysql_db
+    database = database
 
 class Trigger(BaseModel):
   category = CharField()
@@ -32,7 +33,7 @@ class Benchmark(BaseModel):
 
 def create_database():
   tables = [Trigger, Benchmark]
-  mysql_db.drop_tables(tables, safe=True, cascade=True)    
+  database.drop_tables(tables, safe=True)
 
   for table in tables:
     try:

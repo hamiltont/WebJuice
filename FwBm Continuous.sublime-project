@@ -1,0 +1,28 @@
+{
+	"folders":
+	[
+		{
+			"path": "/Users/hamiltont/Documents/FrameworkContinuous"
+		}
+	],
+	"build_systems":
+	[
+	    {
+	        "selector": "source.python",
+	        "name":"Custom py",
+            "cmd": ["source $project_path/env/bin/activate && python -u $file"],
+		    "shell": true,
+	        "file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+	    },
+        {
+            "name":"Virtualenv 2.7",
+            "working_dir": "${project_path:${folder}}/env/bin",
+            "cmd":
+            [
+                "${project_path}`/env/bin/python2.7",
+                "$file"
+            ]
+        }
+
+	]
+}

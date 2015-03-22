@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  #logswin I hope to see cool logs here...
+  script(type='text/javascript').
+    var source = new EventSource("/logs");
+    source.onmessage = function(event) {
+        document.getElementById("logswin").innerHTML += event.data + "<br/>"
+    }
+  
