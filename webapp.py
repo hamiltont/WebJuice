@@ -118,7 +118,10 @@ def admin(name=None):
 @line_profile
 def about(name=None):
   models.create_database()
-  return render_template('about.jade', youAreUsingJade=True)
+  flower_url = 'http://localhost:5555'
+  rabbitmq_url = "http://%s:15672" % host
+  return render_template('about.jade', rabbitmq_url=rabbitmq_url, 
+    flower_url=flower_url, youAreUsingJade=True)
 
 @app.route("/login")
 @line_profile

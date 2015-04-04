@@ -29,6 +29,8 @@ Requires: MySQL, Python 2.7
 
 **Interfaces**
 
+Note that there are hyperlinks on the `About` page to important services
+
 * [Flask](http://127.0.0.1:5000/)
 * [Flower](http://localhost:5555/)
 * [RabbitMQ Management Interface](http://192.168.59.103:15672/) (use `$ boot2docker ip`)
