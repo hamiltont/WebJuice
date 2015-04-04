@@ -44,6 +44,7 @@ def log_for_docker(generator, line_prefix='', print_empty=False):
       if print_empty or line.strip():
         sys.stdout.write(line_prefix)
         sys.stdout.write(line)
+        sys.stdout.flush()
   r_log = threading.Thread(target=log_docker, args=(generator, print_empty, line_prefix))
   r_log.daemon = True
   r_log.start()

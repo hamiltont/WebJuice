@@ -37,8 +37,10 @@ class Controller(object):
     # (host_ip, client) = self._get_boot2docker()
     # d_executor = DockerExecutor(client, host_ip=host_ip, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3')
     # d_executor.start()
-
-    self._enable_celery()
+    (host,cli) = self._get_boot2docker()
+    broker = "amqp://guest:guest@%s:%s//" % (host, 5672)
+    app.conf.update(BROKER_URL = broker)
+    app.conf.update(CELERY_RESULT_BACKEND = broker)
 
   def _get_boot2docker(self):
     b2d = '/usr/local/bin/boot2docker '

@@ -130,5 +130,5 @@ if __name__ == "__main__":
 
   # Unfortunately you can't easily use multiprocessing and 
   # Flask's reloading, they confuse each other
-  app.run(debug=True, use_reloader=False)
+  app.run(debug=True) #, use_reloader=False)
 

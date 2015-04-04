@@ -11,21 +11,38 @@ Requires: MySQL, Python 2.7
 **Installation**
 
 * Clone this repo, cd into new directory
-* Run `virtualenv env`, then `source env/bin/activate`
-* Run `pip install -r requirements.txt`
+* Install dependencies
+* * `virtualenv env`
+* * `source env/bin/activate`
+* * `pip install -r requirements.txt`
 
-**Launch**
-
-* Turn on MySQL
-* Run `python webapp.py`
-
-**Launch on OS X**
+**Launch (OS X only currently)**
 
 * Turn on Docker VM and launch MySQL Container
 * * `boot2docker start`
 * * `$(boot2docker shellinit)`
 * * `docker run -p 3306:3306 -e MYSQL_ROOT_PASSWORD=toor -d mysql`
 * * `boot2docker ip`
+* Run software
+* * `source env/bin/activate`
+* * `supervisord`
+
+**Interfaces**
+
+* [Flask](http://127.0.0.1:5000/)
+* [Flower](http://localhost:5555/)
+* [RabbitMQ Management Interface](http://192.168.59.103:15672/) (use `$ boot2docker ip`)
+
+You cannot access `boot2docker` exposed ports using `localhost`, you
+have to use the IP address presented by `boot2docker ip`
+
+* MySQL - `http://$(boot2docker ip):3306`
+* RabbitMQ - `http://$(boot2docker ip):5672`
+
+**Halting**
+
+While normally using `Ctrl-C` with supervisord works fine, occasionally
+you may need to kill orphaned python processes using `killall -9 python`
 
 Why Python, why Flask?
 ----------------------
