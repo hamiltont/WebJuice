@@ -3,6 +3,34 @@ import yaml
 import threading
 import sys
 import atexit
+import json
+import subprocess
+import docker
+from docker.utils import kwargs_from_env
+
+def get_boot2docker():
+  b2d = '/usr/local/bin/boot2docker '
+  state = json.loads(subprocess.check_output(b2d + 'info', shell=True))['State']
+  if state == 'saved' or state == 'aborted':
+    print "Launching Boot2docker"
+    p = subprocess.Popen(b2d + 'up', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    for line in iter(p.stdout.readline, b""):
+      sys.stdout.write(line)
+  elif state == 'running':
+    print "Boot2docker running"
+
+  boot = '$(%s shellinit 2>/dev/null)' % b2d
+  host = subprocess.check_output(boot + ' && echo $DOCKER_HOST', shell=True)
+  cert = subprocess.check_output(boot + ' && echo $DOCKER_CERT_PATH', shell=True)
+  tls  = subprocess.check_output(boot + ' && echo $DOCKER_TLS_VERIFY', shell=True)
+  os.environ['DOCKER_CERT_PATH'] = cert.rstrip()
+  os.environ['DOCKER_HOST'] = host.rstrip()
+  os.environ['DOCKER_TLS_VERIFY'] = tls.rstrip()
+
+  client = docker.Client(**kwargs_from_env(assert_hostname=False))
+  host_ip = subprocess.check_output(b2d + 'ip', shell=True).rstrip()
+  return (host_ip, client)
+
 
 def parse_log_config(path='logging.yaml'):
   """Returns a dictionary that can be passed

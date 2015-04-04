@@ -14,8 +14,7 @@ from src.tasks import add
 import sys
 import os
 
-#import eventlet
-#eventlet.monkey_patch()
+from src.utils import *
 
 # Setting static url means we use /js/filename.js 
 # versus /static/js/filename.js
@@ -38,6 +37,13 @@ app.config['DEBUG_TB_PANELS'] = [
 
 # Enable JADE templates
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
+
+from src.tasks import app as celeryapp
+
+(host,cli) = get_boot2docker()
+broker = "amqp://guest:guest@%s:%s//" % (host, 5672)
+celeryapp.conf.update(BROKER_URL = broker)
+celeryapp.conf.update(CELERY_RESULT_BACKEND = broker)
 
 @app.route("/")
 @line_profile
