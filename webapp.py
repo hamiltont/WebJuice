@@ -14,8 +14,8 @@ from src.tasks import add
 import sys
 import os
 
-import eventlet
-eventlet.monkey_patch()
+#import eventlet
+#eventlet.monkey_patch()
 
 # Setting static url means we use /js/filename.js 
 # versus /static/js/filename.js
