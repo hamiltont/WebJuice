@@ -1,0 +1,375 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"line",
+				"line_prefix"
+			],
+			[
+				"_e",
+				"_enable_celery"
+			],
+			[
+				"boot",
+				"boot2docker"
+			],
+			[
+				"fra",
+				"frameworks"
+			],
+			[
+				"frame",
+				"frameworks"
+			],
+			[
+				"host",
+				"host_ip"
+			],
+			[
+				"repos",
+				"repository"
+			],
+			[
+				"bash",
+				"bashrc"
+			],
+			[
+				"server",
+				"server_fab"
+			],
+			[
+				"client",
+				"client_id"
+			],
+			[
+				"net",
+				"network"
+			],
+			[
+				"repo",
+				"repository"
+			],
+			[
+				"serv",
+				"server_id"
+			],
+			[
+				"data",
+				"databa_id"
+			],
+			[
+				"clien",
+				"client_id"
+			],
+			[
+				"hos",
+				"host_ip"
+			],
+			[
+				"start",
+				"start_container"
+			],
+			[
+				"comm",
+				"commit"
+			],
+			[
+				"get",
+				"getuser"
+			],
+			[
+				"buil",
+				"build_container"
+			],
+			[
+				"shell",
+				"shell"
+			],
+			[
+				"check",
+				"check_output"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 400.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"pack res",
+				"PackageResourceViewer: Extract Package"
+			],
+			[
+				"pac res",
+				"PackageResourceViewer: Open Resource"
+			],
+			[
+				"pc:in",
+				"Package Control: Install Package"
+			],
+			[
+				"git",
+				"Git: Status"
+			],
+			[
+				"git:st",
+				"Git: Status"
+			],
+			[
+				"mark:ch",
+				"Markdown Preview: Open Markdown Cheat sheet"
+			],
+			[
+				"mark",
+				"Markdown Preview: Preview in Browser"
+			],
+			[
+				"pc:",
+				"Package Control: Remove Package"
+			]
+		],
+		"width": 475.0
+	},
+	"console":
+	{
+		"height": 126.0,
+		"history":
+		[
+			"print $project_path",
+			"$project_path",
+			"import urllib.request,os,hashlib; h = 'eb2297e1a458f27d836c04bb0cbaf282' + 'd0e7a3098092775ccb37ca9d6b2e4b7d'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/hamiltont/Documents/WebJuice"
+	],
+	"file_history":
+	[
+		"/Users/hamiltont/Documents/WebJuice/README.md",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/run-ci.py",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/frameworks/CSharp/aspnet/setup_nginx.sh",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/setup/linux/languages/mono.sh",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/setup/linux/languages/xsp.sh",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/setup/linux/bash_functions.sh",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/setup/linux/prerequisites.sh",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/deployment/vagrant-common/core.rb",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/benchmark/benchmarker.py",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/toolset/setup/linux/languages/python3.sh",
+		"/Users/hamiltont/Documents/WebJuice/templates/about.jade",
+		"/Users/hamiltont/Documents/WebJuice/webapp.py",
+		"/Users/hamiltont/Documents/WebJuice/src/controller.py",
+		"/Users/hamiltont/Documents/FrameworkBenchmarks/frameworks/Scala/scruffy/README.md",
+		"/Users/hamiltont/Documents/WebJuice/start_celery.py",
+		"/Users/hamiltont/Documents/FrameworkContinuous/src/test.py",
+		"/Users/hamiltont/Documents/FrameworkContinuous/requirements.txt",
+		"/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/subprocess.py",
+		"/Users/hamiltont/Library/Application Support/Sublime Text 3/Packages/Default/Default (OSX).sublime-keymap",
+		"/Users/hamiltont/Documents/FrameworkContinuous/src/models.py",
+		"/Users/hamiltont/Documents/FrameworkContinuous/README.md",
+		"/Users/hamiltont/Documents/FrameworkContinuous/FwBm Continuous.sublime-project",
+		"/Users/hamiltont/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/Users/hamiltont/Documents/FrameworkContinuous/src/logging.yaml",
+		"/Users/hamiltont/Documents/FrameworkContinuous/webapp.py",
+		"/Users/hamiltont/Documents/FrameworkContinuous/src/executors/docker/ssh/bootstrap.sh",
+		"/Users/hamiltont/Documents/FrameworkContinuous/src/executors/docker/ssh/Dockerfile",
+		"/Users/hamiltont/Documents/FrameworkContinuous/env/lib/python2.7/site-packages/docker/tls.py",
+		"/Users/hamiltont/Documents/FrameworkContinuous/src/executors/docker/client/Dockerfile",
+		"/Users/hamiltont/Downloads/piwigo/action.php",
+		"/Users/hamiltont/Library/Application Support/CrashPlan/ui.properties",
+		"/Users/hamiltont/Documents/Blog/_drafts/2015-02-08-Docker-Tricks.md",
+		"/Users/hamiltont/Documents/Blog/_drafts/2014-12-10-Project-Dockerfiles.md",
+		"/Volumes/TrueCrypt 7.1a/TrueCrypt 7.1a.mpkg/Contents/distribution.dist"
+	],
+	"find":
+	{
+		"height": 23.0
+	},
+	"find_in_files":
+	{
+		"height": 106.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"upgrade",
+			"sleep",
+			"kerne",
+			"enable",
+			"tasks",
+			"enable_cel",
+			"start_con",
+			"kwar",
+			"self",
+			"multi",
+			"Importing",
+			"multipro",
+			"importing",
+			"returned",
+			"running",
+			"sleeping",
+			"threading",
+			"Done",
+			"start",
+			"file",
+			"models",
+			"database",
+			"images",
+			"techempower_ben",
+			"execute",
+			"commit",
+			"shell_",
+			"database",
+			"tfbr",
+			"shell_logg",
+			"shell",
+			"id_",
+			"env.k",
+			"env",
+			"color",
+			"colored",
+			"dbla",
+			"get_eleme",
+			"path",
+			"pics.hamiltont.me"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"<removed>"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 35.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 308.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "WebJuice.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 167.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"start_cli",
+				"start_client_container"
+			]
+		],
+		"width": 557.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 222.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
