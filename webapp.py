@@ -9,7 +9,6 @@ from flask_debugtoolbar_lineprofilerpanel.profile import line_profile
 from src import models
 print "Importing controller"
 from src import controller
-from src.tasks import add
 
 import sys
 import os
@@ -39,11 +38,13 @@ app.config['DEBUG_TB_PANELS'] = [
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
 
 from src.tasks import app as celeryapp
+from src.tasks import add
 
 (host,cli) = get_boot2docker()
 broker = "amqp://guest:guest@%s:%s//" % (host, 5672)
 celeryapp.conf.update(BROKER_URL = broker)
 celeryapp.conf.update(CELERY_RESULT_BACKEND = broker)
+celeryapp.conf.update(CELERY_TRACK_STARTED = True)
 
 @app.route("/")
 @line_profile
@@ -55,8 +56,6 @@ def dash(name=None):
 @line_profile
 def lang(name=None):
   models.create_database()
-
-  from src.tasks import app
   
 
   rootdir = os.path.dirname(os.path.realpath(__file__))
@@ -81,6 +80,19 @@ def lang(name=None):
   '''
 
   return render_template('lang.jade', youAreUsingJade=True)
+
+from src.executors.executor import start_docker,add2
+from pprint import pprint
+
+@app.route('/start')
+def start_build():
+  print "Starting remote command"
+  print "Task list"
+  pprint(celeryapp.tasks)
+
+  start_docker.delay()
+  print "Started remote command"
+  return render_template('queue.jade', youAreUsingJade=True)
 
 @app.route('/logs')
 def read_log_file():

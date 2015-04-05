@@ -20,7 +20,7 @@ def start_celery_worker_subprocess(port):
     broker = "amqp://guest:guest@%s:%s//" % (host, port)
 
     print "Running Celery Worker process"
-    command = "celery worker --app=src.tasks --loglevel=INFO --broker=%s --concurrency=1" % broker
+    command = "celery worker --events --config=celery_config --app=src.tasks --loglevel=INFO --broker=%s --concurrency=1" % broker
     print " $ " + command
   
     # Thanks: http://www.saltycrane.com/blog/2009/10/how-capture-stdout-in-real-time-python/

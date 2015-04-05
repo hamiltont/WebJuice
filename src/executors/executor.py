@@ -51,8 +51,23 @@ import os
 import json
 import exceptions
 
+from .. import utils as foo
+
 from streamlogger import use_logger
 shell_logger = use_logger(__name__)
+
+from celery import current_app
+@current_app.task(name='src.executors.executor.start_docker')
+def start_docker():
+  (host,cli) = foo.get_boot2docker()
+  print "Got  %s and %s" % (host, cli)
+
+  #d = DockerExecutor(cli, host_ip=host, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3')
+  #d.create_base_images()
+
+  with DockerExecutor(cli, host_ip=host, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3') as executor:
+    print "Base images constructed"
+
 
 class TFBExecutor(object):
   """A base model that will use our MySQL database"""
