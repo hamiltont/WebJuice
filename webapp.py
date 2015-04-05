@@ -133,11 +133,19 @@ def login(name=None):
 def die(name=None):
   sys.exit("Normal exit")
   
+DEBUG=True
+
+# Work around stdout buffering caused by supervisord+flask combo
+# 
+# See https://github.com/mitsuhiko/flask/issues/1420
+if DEBUG:
+  import sys
+  import os
+  sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
 if __name__ == "__main__":
   print "My name is main, I'm creating a controller"
   c = controller.Controller()
 
-  # Unfortunately you can't easily use multiprocessing and 
-  # Flask's reloading, they confuse each other
-  app.run(debug=True) #, use_reloader=False)
+  app.run(debug=True, use_reloader=True)
 

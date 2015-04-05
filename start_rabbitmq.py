@@ -47,6 +47,6 @@ if __name__ == "__main__":
 
   # Loop until SIGINT received
   while True:
-    print 'RabbitMQ Bootstrapper Running...'
+    print 'RabbitMQ Bootstrapper Alive...'
     sys.stdout.flush()
-    time.sleep(5)
+    time.sleep(30*60)
