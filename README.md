@@ -6,7 +6,7 @@ This is a fancy way of saying it doesn't do anything useful yet, and probably wo
 Requirements and Installation
 -----------------------------
 
-Requires: MySQL, Python 2.7
+Requires: MySQL, Python 2.7.9
 
 **Installation**
 
