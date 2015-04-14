@@ -57,28 +57,6 @@ def dash(name=None):
 def lang(name=None):
   models.create_database()
   
-
-  rootdir = os.path.dirname(os.path.realpath(__file__))
-  if not os.path.exists(rootdir + '/logs'):
-    os.makedirs(rootdir + '/logs')
-
-  output_f = rootdir + "/logs/somelog.txt"
-  output = open(output_f, 'w+')
-  print "created outputfile: %s" % output_f
-  output.close()
-
-  task = add.delay(10,10, output_f)
-  
-  '''while True:
-    new_printable_output = output.readline()
-    if new_printable_output:
-      sys.stdout.write(new_printable_output)
-      sys.stdout.flush()
-    if task.state not in ['PENDING', 'STARTED']:
-      break
-  print "*** Fabric task has finished ***"
-  '''
-
   return render_template('lang.jade', youAreUsingJade=True)
 
 from src.executors.executor import start_docker,add2
@@ -87,8 +65,6 @@ from pprint import pprint
 @app.route('/start')
 def start_build():
   print "Starting remote command"
-  print "Task list"
-  pprint(celeryapp.tasks)
 
   start_docker.delay()
   print "Started remote command"
@@ -96,23 +72,22 @@ def start_build():
 
 @app.route('/logs')
 def read_log_file():
-  def generate():
+  def generate(logname):
     rootdir = os.path.dirname(os.path.realpath(__file__))
-    output_f = rootdir + "/logs/somelog.txt"
+    output_f = "%s/logs/%s" % (rootdir, logname)
     
     # See http://www.html5rocks.com/en/tutorials/eventsource/basics/
     with open(output_f, 'r') as output:
       for line in iter(output.readline, 'MAGIC_END'):
-        yield 'data:' + line + '\n\n'
+        if line:
+          yield 'data:' + line
 
-  return Response(generate(), mimetype='text/event-stream')
-
+  return Response(generate('docker.txt'), mimetype='text/event-stream')
 
 @app.route("/logtest")
 @line_profile
 def print_log(name=None):
   return render_template('logs.jade', youAreUsingJade=True)
-
 
 @app.route("/queue")
 @line_profile
