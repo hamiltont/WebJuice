@@ -69,3 +69,6 @@ codebase is my attempt to get a continuous system off the ground.
 I won't be surprised or sad at all if someone rewrites the entire 
 app one day (in fact, it would be a huge success!). Happy hacking ;-)
 
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/hamiltont/webjuice/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
