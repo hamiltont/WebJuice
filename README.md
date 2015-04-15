@@ -6,6 +6,9 @@ This is a fancy way of saying it doesn't do anything useful yet, and probably wo
 Requirements and Installation
 -----------------------------
 
+[![Inline docs](http://inch-ci.org/github/hamiltont/WebJuice.svg?branch=master)](http://inch-ci.org/github/hamiltont/WebJuice)
+[![Code Climate](https://codeclimate.com/github/hamiltont/WebJuice.png)](https://codeclimate.com/github/hamiltont/WebJuice)
+
 Requires: MySQL, Python 2.7.9
 
 **Installation**
