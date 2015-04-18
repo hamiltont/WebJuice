@@ -137,6 +137,7 @@ if __name__ == "__main__":
   
   parser = argparse.ArgumentParser(description='Run webserver')
   parser.add_argument('--broker', required=True, help='Celery Broker URL')
+  parser.add_argument('--port', default=int(os.environ.get('PORT', 5000)), type=int, help='Flask HTTP Port')
   args = parser.parse_args()
   logging.info("Started with: %s", pprint.pformat(args))
 
@@ -147,5 +148,5 @@ if __name__ == "__main__":
   print "My name is main, I'm creating a controller"
   c = controller.Controller()
   
-  app.run(debug=True, use_reloader=True)
+  app.run(debug=True, host='0.0.0.0', use_reloader=True, port=args.port)
 
