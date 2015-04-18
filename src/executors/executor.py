@@ -54,19 +54,35 @@ import exceptions
 from .. import utils as foo
 
 from streamlogger import use_logger
+# logging.getLogger(__name__).addHandler(logging.FileHandler('logs/docker.txt'))
 shell_logger = use_logger(__name__)
 
 from celery import current_app
+
+@current_app.task(name='src.executors.executor.add2')
+def add2(x, y):  
+  return x + y
+
 @current_app.task(name='src.executors.executor.start_docker')
 def start_docker():
+
   (host,cli) = foo.get_boot2docker()
   print "Got  %s and %s" % (host, cli)
 
   #d = DockerExecutor(cli, host_ip=host, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3')
   #d.create_base_images()
 
-  with DockerExecutor(cli, host_ip=host, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3') as executor:
+  def framework_run():
+    with cd('~/FrameworkBenchmarks'):
+      command = 'python toolset/run-tests.py --install server --verbose --test haywire --runner-user tfbrunner '
+      command += '--client-user root   --client-host client     --client-identity-file ~/.ssh/id_rsa '
+      command += '--database-user root --database-host database --database-identity-file ~/.ssh/id_rsa '
+      run(command, **shell_logger)
+
+  with DockerExecutor(cli, host_ip=host, commit='c74b70c5cf67355073599a62ca39s6dd1e8eed6c3') as executor:
     print "Base images constructed"
+    execute(framework_run, hosts=[executor.server_fab])
+    
 
 
 class TFBExecutor(object):
@@ -95,10 +111,10 @@ class DockerExecutor(TFBExecutor):
 
     print("Building base SSH image")
     self.base_image = getuser() + '/tfb_base'
-    self.build_container('docker/ssh', self.base_image)
+    self.build_container('/Users/hamiltont/Documents/WebJuice/src/executors/docker/ssh', self.base_image)
 
     # Sets up fabric SSH library
-    env.key_filename = 'docker/ssh/id_rsa'   # Use private key file
+    env.key_filename = '/Users/hamiltont/Documents/WebJuice/src/executors/docker/ssh/id_rsa'   # Use private key file
     env.abort_exception = exceptions.OSError # Do not throw SystemExit on non-zero command
 
     # TODO Utilize the tag to ensure they are the correct base image
@@ -106,7 +122,8 @@ class DockerExecutor(TFBExecutor):
     client = len(self.cli.images(name=getuser()+'/tfb_client')) > 0
     databa = len(self.cli.images(name=getuser()+'/tfb_databa')) > 0
 
-    # Just start the base images, they are created
+    '''
+    # Just start the base images, they are already built
     if server and client and databa:
       # start things
       info("Base images already exist, starting containers")
@@ -131,7 +148,9 @@ class DockerExecutor(TFBExecutor):
       except OSError:
         self.logger.error("turning on databases failed")
     else:
-      self.create_base_images()
+      '''
+    self.create_base_images()
+
 
     return self
 
@@ -298,7 +317,11 @@ class DockerExecutor(TFBExecutor):
     for line in self.cli.build(path=dockerfile_path, 
       tag=container_tag, stream=True, 
       quiet=False, rm=True):
-      debug("%s: %s", container_tag, json.loads(line)['stream'].rstrip())
+      if 'stream' in line:
+        debug("%s: %s", container_tag, json.loads(line)['stream'].rstrip())
+      else:
+        debug("%s: %s", container_tag, line.rstrip())
+      print line.rstrip()
     debug("Built container %s in %s", container_tag, datetime.now() - build_start)
 
   def unprovision_hosts(self, remove=True):

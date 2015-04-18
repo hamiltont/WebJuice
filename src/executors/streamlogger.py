@@ -110,7 +110,9 @@ def use_logger(name):
     # 3 - all package-level run calls use the same name
     # Solution is to use filters or other light mechanism to add
     # more context e.g. {host}, {username}, {port}, {command}, etc
-    out_err = StreamLogger('stdout', logger=logging.getLogger(name))
+    x = logging.getLogger(name)
+    # x.addHandler(logging.FileHandler('logs/docker.txt'))
+    out_err = StreamLogger('stdout', logger=x)
     params['stdout'] = out_err
     params['stderr'] = out_err
     return params
