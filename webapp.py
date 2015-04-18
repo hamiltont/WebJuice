@@ -12,6 +12,9 @@ from src import controller
 
 import sys
 import os
+import argparse
+import logging
+import pprint
 
 from src.utils import *
 
@@ -40,12 +43,6 @@ app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
 from src.tasks import app as celeryapp
 from src.tasks import add
 
-(host,cli) = get_boot2docker()
-broker = "amqp://guest:guest@%s:%s//" % (host, 5672)
-celeryapp.conf.update(BROKER_URL = broker)
-celeryapp.conf.update(CELERY_RESULT_BACKEND = broker)
-celeryapp.conf.update(CELERY_TRACK_STARTED = True)
-
 @app.route("/")
 @line_profile
 def dash(name=None):
@@ -60,7 +57,6 @@ def lang(name=None):
   return render_template('lang.jade', youAreUsingJade=True)
 
 from src.executors.executor import start_docker,add2
-from pprint import pprint
 
 @app.route('/start')
 def start_build():
@@ -131,8 +127,25 @@ if DEBUG:
   sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 if __name__ == "__main__":
+
+  logging.addLevelName(logging.ERROR, 'err')
+  logging.addLevelName(logging.CRITICAL, 'crit')
+  logging.addLevelName(logging.INFO, 'info')
+  logging.addLevelName(logging.DEBUG, 'debug')
+  logging.addLevelName(logging.WARN, 'warn')
+  logging.basicConfig(level=logging.INFO, format='%(levelname)-4s:%(filename)-.9s:%(funcName)-.9s: %(message)s')
+  
+  parser = argparse.ArgumentParser(description='Run webserver')
+  parser.add_argument('--broker', required=True, help='Celery Broker URL')
+  args = parser.parse_args()
+  logging.info("Started with: %s", pprint.pformat(args))
+
+  celeryapp.conf.update(BROKER_URL = args.broker)
+  celeryapp.conf.update(CELERY_RESULT_BACKEND = args.broker)
+  celeryapp.conf.update(CELERY_TRACK_STARTED = True)
+
   print "My name is main, I'm creating a controller"
   c = controller.Controller()
-
+  
   app.run(debug=True, use_reloader=True)
 

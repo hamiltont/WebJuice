@@ -15,4 +15,3 @@ peewee
 pyjade
 celery
 flower
-supervisor

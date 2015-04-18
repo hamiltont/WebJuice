@@ -11,8 +11,9 @@ from docker.utils import kwargs_from_env
 def get_boot2docker():
   b2d = '/usr/local/bin/boot2docker '
   state = json.loads(subprocess.check_output(b2d + 'info', shell=True))['State']
-  if state == 'saved' or state == 'aborted':
+  if state == 'saved' or state == 'aborted' or state == 'poweroff':
     print "Launching Boot2docker"
+    print "Run $(boot2docker shellinit) in your shell"
     p = subprocess.Popen(b2d + 'up', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     for line in iter(p.stdout.readline, b""):
       sys.stdout.write(line)
