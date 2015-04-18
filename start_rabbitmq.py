@@ -28,6 +28,9 @@ def start_rabbit(port, mport):
     f.write("RABBITMQ_BIGWIG_TX_URL=%s\n" % broker_url)
     f.write("RABBITMQ_BIGWIG_RX_URL=%s\n" % broker_url)
     f.write("BROKER_API=%s\n" % broker_api)
+
+    # Setup arg flags for running webapp in development mode
+    f.write("WEB_ARGS=--debug\n")
     print "RabbitMQ: Config written to .env"
 
 if __name__ == "__main__":

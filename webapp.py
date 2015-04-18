@@ -20,22 +20,9 @@ from src.utils import *
 
 # Setting static url means we use /js/filename.js 
 # versus /static/js/filename.js
+print "Creating flask app"
 app = Flask(__name__, static_url_path='')
 app.config['SECRET_KEY'] = 'this is a very secret key :)'
-
-# When we are in debug mode, expose a nice toolbar
-app.debug = True
-toolbar = DebugToolbarExtension(app)
-app.config['DEBUG_TB_PANELS'] = [
-    'flask_debugtoolbar.panels.timer.TimerDebugPanel',
-    'flask_debugtoolbar.panels.headers.HeaderDebugPanel',
-    'flask_debugtoolbar.panels.request_vars.RequestVarsDebugPanel',
-    'flask_debugtoolbar.panels.template.TemplateDebugPanel',
-    'flask_debugtoolbar.panels.logger.LoggingPanel',
-    'flask_debugtoolbar.panels.profiler.ProfilerDebugPanel',
-    'flask_debugtoolbar_lineprofilerpanel.panels.LineProfilerPanel',
-    'flask_debugtoolbar.panels.versions.VersionDebugPanel'
-]
 
 # Enable JADE templates
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
@@ -116,16 +103,6 @@ def login(name=None):
 def die(name=None):
   sys.exit("Normal exit")
   
-DEBUG=True
-
-# Work around stdout buffering caused by supervisord+flask combo
-# 
-# See https://github.com/mitsuhiko/flask/issues/1420
-if DEBUG:
-  import sys
-  import os
-  sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
 if __name__ == "__main__":
 
   logging.addLevelName(logging.ERROR, 'err')
@@ -134,19 +111,42 @@ if __name__ == "__main__":
   logging.addLevelName(logging.DEBUG, 'debug')
   logging.addLevelName(logging.WARN, 'warn')
   logging.basicConfig(level=logging.INFO, format='%(levelname)-4s:%(filename)-.9s:%(funcName)-.9s: %(message)s')
+  log = logging.getLogger(__name__)
   
   parser = argparse.ArgumentParser(description='Run webserver')
   parser.add_argument('--broker', required=True, help='Celery Broker URL')
   parser.add_argument('--port', default=int(os.environ.get('PORT', 5000)), type=int, help='Flask HTTP Port')
+  parser.add_argument('--debug', default=False, action='store_true', help='Run in Debug Mode and Reload on Code Changes')
   args = parser.parse_args()
-  logging.info("Started with: %s", pprint.pformat(args))
+  log.info("Started with: %s", pprint.pformat(args))
 
   celeryapp.conf.update(BROKER_URL = args.broker)
   celeryapp.conf.update(CELERY_RESULT_BACKEND = args.broker)
   celeryapp.conf.update(CELERY_TRACK_STARTED = True)
+  
+  # When we are in debug mode, expose a nice toolbar
+  if args.debug:
+    log.info("Setting up debug toolbar")
 
-  print "My name is main, I'm creating a controller"
+    toolbar = DebugToolbarExtension(app)
+    app.config['DEBUG_TB_PANELS'] = [
+        'flask_debugtoolbar.panels.timer.TimerDebugPanel',
+        'flask_debugtoolbar.panels.headers.HeaderDebugPanel',
+        'flask_debugtoolbar.panels.request_vars.RequestVarsDebugPanel',
+        'flask_debugtoolbar.panels.template.TemplateDebugPanel',
+        'flask_debugtoolbar.panels.logger.LoggingPanel',
+        'flask_debugtoolbar.panels.profiler.ProfilerDebugPanel',
+        'flask_debugtoolbar_lineprofilerpanel.panels.LineProfilerPanel',
+        'flask_debugtoolbar.panels.versions.VersionDebugPanel'
+    ]
+
+    # Work around stdout buffering caused by supervisord+flask combo
+    # 
+    # See https://github.com/mitsuhiko/flask/issues/1420
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
+  log.info("My name is main, I'm creating a controller")
   c = controller.Controller()
   
-  app.run(debug=True, host='0.0.0.0', use_reloader=True, port=args.port)
+  app.run(debug=args.debug, host='0.0.0.0', port=args.port)
 
