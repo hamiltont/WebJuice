@@ -7,7 +7,7 @@ import json
 import subprocess
 import sys
 import os
-from src.utils import *
+from webjuice.utils import *
 
 import signal
 import time
