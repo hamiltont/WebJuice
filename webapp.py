@@ -23,6 +23,9 @@ from webjuice import celeryapp
 @socketio.on('my event')
 def handle_message(message):
   log.info("received message: %s", message)
+
+def running_inside_heroku():
+  return "DYNO" in os.environ.keys()
   
 if __name__ == "__main__":
   
@@ -64,4 +67,7 @@ if __name__ == "__main__":
   #c = controller.Controller()
   
   app.debug = args.debug
+  sn = "%s:%s" % (os.environ.get('SERVER_NAME', 'localhost'), 80 if running_inside_heroku() else args.port)
+  log.info("Using servername %s", sn)
+  app.config['SERVER_NAME'] = sn
   socketio.run(app, host='0.0.0.0', port=args.port)

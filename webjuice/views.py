@@ -74,7 +74,7 @@ def about(name=None):
 @line_profile
 def login(name=None):
   models.create_database()
-  return render_template('login.jade', youAreUsingJade=True)
+  return render_template('login.jade', youAreUsingJade=True, servername=app.config['SERVER_NAME'])
 
 
 
