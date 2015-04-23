@@ -3,7 +3,7 @@ import os
 from webjuice import app
 from webjuice import models
 
-from webjuice.executors.executor import start_docker,add2
+from webjuice.executors.executor import start_docker
 
 from flask import render_template
 
@@ -75,10 +75,6 @@ def about(name=None):
 def login(name=None):
   models.create_database()
   return render_template('login.jade', youAreUsingJade=True)
-
-@app.route("/die")
-def die(name=None):
-  sys.exit("Normal exit")
 
 
 

@@ -9,24 +9,49 @@ Requirements and Installation
 [![Inline docs](http://inch-ci.org/github/hamiltont/WebJuice.svg?branch=master)](http://inch-ci.org/github/hamiltont/WebJuice)
 [![Code Climate](https://codeclimate.com/github/hamiltont/WebJuice.png)](https://codeclimate.com/github/hamiltont/WebJuice)
 
-Requires: MySQL, Python 2.7.9
+Requires: Python 2.7.9, Docker, RabbitMQ (Only in Production)
 
-**Installation**
+**Setup**
 
-* Clone this repo, cd into new directory
-* Install dependencies
-* * `virtualenv env`
-* * `source env/bin/activate`
-* * `pip install -r requirements.txt`
+```bash
+# Get source code
+git clone https://github.com/hamiltont/WebJuice.git
+cd WebJuice
 
-**Launch (OS X only currently)**
+# Install dependencies
+virtualenv env
+source env/bin/activate
+pip install -r requirements.txt
 
-* Turn on Docker VM
-* * `boot2docker start`
-* Launch RabbitMQ container
-* * `python start_rabbitmq.py`
-* Run Flask,Flower, and Celery
-* * `foreman start`
+# If running in developer mode, use docker to setup a 
+# container running RabbitMQ
+python start_rabbitmq.py
+```
+
+**Launch**
+
+Simply put, launching is as easy as calling `foreman start`. This will spin 
+up Flask, Flower, and Celery. 
+
+However, before you can launch you should set environment variables so we 
+can connect to your Docker host. Using 
+[Docker Machine](https://docs.docker.com/machine/) is easy, it will 
+automatically setup Docker in a range of environments (OS X, 
+Windows, Linux, Amazon, Digital Ocean, Rackspace, etc) and setup these 
+environment variables
+
+Docker environment variables: 
+* Required   : `DOCKER_HOST`
+* Required   : `DOCKER_HOST_IP`
+* Recommended: `DOCKER_TLS_VERIFY`
+* Recommended: `DOCKER_CERT_PATH`
+
+After you setup a Docker provider using `docker-machine`, use
+
+```bash
+$ eval "$(docker-machine env)"
+$ export DOCKER_HOST=`docker-machine ip`
+```
 
 **Management Interfaces**
 

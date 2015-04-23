@@ -44,30 +44,27 @@ from datetime import datetime
 
 import docker
 import docker_utils as dutil
-import utils
+
+from webjuice.utils import get_docker
 
 import subprocess
 import os
+
+from os.path import dirname,abspath,join
 import json
 import exceptions
 
-from .. import utils as foo
-
 from streamlogger import use_logger
-# logging.getLogger(__name__).addHandler(logging.FileHandler('logs/docker.txt'))
 shell_logger = use_logger(__name__)
+log = logging.getLogger(__name__)
 
 from celery import current_app
 
-@current_app.task(name='src.executors.executor.add2')
-def add2(x, y):  
-  return x + y
-
-@current_app.task(name='src.executors.executor.start_docker')
+@current_app.task(name='webjuice.executors.executor.start_docker')
 def start_docker():
 
-  (host,cli) = foo.get_boot2docker()
-  print "Got  %s and %s" % (host, cli)
+  (host,cli) = get_docker()
+  log.info("Got docker as %s,%s", host, cli)
 
   #d = DockerExecutor(cli, host_ip=host, commit='c74b70c5cf67355073599a62ca396dd1e8eed6c3')
   #d.create_base_images()
@@ -87,14 +84,8 @@ def start_docker():
 
 class TFBExecutor(object):
   """A base model that will use our MySQL database"""
-  def __init__(self, commit, logger=None):    
-    self.logger = logger or logging.getLogger(__name__)
-    self.commit = commit
-
-    global debug,warn,info
-    debug = self.logger.debug
-    warn = self.logger.warn
-    info = self.logger.info
+  def __init__(self, commit):
+      self.commit = commit
 
 class DockerExecutor(TFBExecutor):
 
@@ -105,17 +96,19 @@ class DockerExecutor(TFBExecutor):
 
     alive = len(self.cli.containers())
     if alive != 0:
-      warn("%s containers are currently running, which will impact your results", alive)
+      log.warn("%s containers are currently running, which will impact your results", alive)
 
   def __enter__(self):
-
-    print("Building base SSH image")
+    base_path = abspath(join(dirname(__file__),'docker','ssh'))
+    log.info("Building base SSH image from %s", base_path)
     self.base_image = getuser() + '/tfb_base'
-    self.build_container('/Users/hamiltont/Documents/WebJuice/src/executors/docker/ssh', self.base_image)
+    self.build_container(base_path, self.base_image)
 
     # Sets up fabric SSH library
-    env.key_filename = '/Users/hamiltont/Documents/WebJuice/src/executors/docker/ssh/id_rsa'   # Use private key file
-    env.abort_exception = exceptions.OSError # Do not throw SystemExit on non-zero command
+    # - Specify RSA private key location for passwordless SSH
+    # - Do not throw SystemExit on non-zero return code
+    env.key_filename = abspath(join(dirname(__file__),'docker','ssh','id_rsa'))
+    env.abort_exception = exceptions.OSError 
 
     # TODO Utilize the tag to ensure they are the correct base image
     server = len(self.cli.images(name=getuser()+'/tfb_server')) > 0
@@ -151,11 +144,10 @@ class DockerExecutor(TFBExecutor):
       '''
     self.create_base_images()
 
-
     return self
 
   def create_base_images(self):
-    print("Building base TFB images")
+    log.info("Building base TFB images")
     self.sport_internal = 22
     self.cport_internal = 22
     self.dport_internal = 22
@@ -174,19 +166,22 @@ class DockerExecutor(TFBExecutor):
     self.databa_fab = "root@%s:%s" % (self.dhost, self.dport)
 
     try:
-      print("- Installing server software into base TFB server image %s" % self.server_id)
-      print("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa tfb@%s" % (self.sport, os.path.dirname(os.path.realpath(__file__)), self.shost))
+      log.info("- Installing server software into base TFB server image %s", self.server_id)
+      log.debug("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa tfb@%s",
+        self.sport, abspath(dirname(__file__)), self.shost)
       execute(self.deploy_server, hosts=[self.server_fab])
 
-      print("- Installing client software into base TFB client image %s" % self.client_id)
-      print("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.cport, os.path.dirname(os.path.realpath(__file__)), self.chost))
+      log.info("- Installing client software into base TFB client image %s", self.client_id)
+      log.debug("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s",
+        self.cport, abspath(dirname(__file__)), self.chost)
       execute(self.deploy_client, hosts=[self.server_fab])
 
-      print("- Installing database software into base TFB database image %s" % self.databa_id)
-      print("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s" % (self.dport, os.path.dirname(os.path.realpath(__file__)), self.dhost))
+      log.info("- Installing database software into base TFB database image %s", self.databa_id)
+      log.debug("- Manual Login: ssh -o StrictHostKeyChecking=no -p %s -i %s/docker/ssh/id_rsa root@%s", 
+        self.dport, abspath(dirname(__file__)), self.dhost)
       execute(self.deploy_database, hosts=[self.server_fab])
     except Exception:
-      self.logger.error("- Software Installation Failed, Unable to Continue!")
+      log.exception("- Software Installation Failed, Unable to Continue!")
       self.__exit__(None, None, None)
       raise
 
@@ -217,7 +212,7 @@ class DockerExecutor(TFBExecutor):
     ids=['server_id','client_id','databa_id']
     for id in ids:
       if hasattr(self, id):
-        warn("Killing container %s", getattr(self,id))
+        log.warn("Killing container %s", getattr(self,id))
         # self.cli.kill(getattr(self,id))
 
   def deploy_server(self):    
@@ -263,7 +258,7 @@ class DockerExecutor(TFBExecutor):
     sudo('usermod -a -G tfbrunner tfb', user='root')
 
     with cd('~/FrameworkBenchmarks'):
-      run('pip install --user -r config/python_requirements.txt')
+      run('pip install --user -r requirements.txt')
 
       command = 'python toolset/run-tests.py --install server --client-user root '
       command += '--runner-user tfbrunner --database-user root --install-only '
@@ -308,26 +303,26 @@ class DockerExecutor(TFBExecutor):
     self.cli.start(container=container['Id'],
       publish_all_ports=True, network_mode=network,
       links=links)
-    debug("Started %s in %s", image, container['Id'])
+    log.debug("Started %s in %s", image, container['Id'])
     return container['Id']
 
   def build_container(self, dockerfile_path, container_tag):
-    info("Building container %s", container_tag)
+    log.info("Building container %s", container_tag)
     build_start = datetime.now()
     for line in self.cli.build(path=dockerfile_path, 
       tag=container_tag, stream=True, 
       quiet=False, rm=True):
       if 'stream' in line:
-        debug("%s: %s", container_tag, json.loads(line)['stream'].rstrip())
+        log.debug("%s: %s", container_tag, json.loads(line)['stream'].rstrip())
       else:
-        debug("%s: %s", container_tag, line.rstrip())
+        log.debug("%s: %s", container_tag, line.rstrip())
       print line.rstrip()
-    debug("Built container %s in %s", container_tag, datetime.now() - build_start)
+    log.debug("Built container %s in %s", container_tag, datetime.now() - build_start)
 
   def unprovision_hosts(self, remove=True):
     def halt_and_rm(image):
       for container in dutil.containers_running_image(self.client, image):
-        warn("Halting container %s", dutil.container_str(container))
+        log.warn("Halting container %s", dutil.container_str(container))
         self.client.stop(container['Id'])
         if remove:
           self.client.remove_container(container['Id'])
@@ -340,19 +335,10 @@ class DockerExecutor(TFBExecutor):
         try:
           self.client.remove_image(image)
         except Exception:
-          info("Failed to remove %s", image)
+          log.exception("Failed to remove %s", image)
     safe_rm(self.cimage)
     safe_rm(self.dimage)
     safe_rm(self.simage)
-
-def get_boot2docker_environ():
-  boot = '$(/usr/local/bin/boot2docker shellinit 2>/dev/null)'
-  host = subprocess.check_output(boot + ' && echo $DOCKER_HOST', shell=True)
-  cert = subprocess.check_output(boot + ' && echo $DOCKER_CERT_PATH', shell=True)
-  tls  = subprocess.check_output(boot + ' && echo $DOCKER_TLS_VERIFY', shell=True)
-  os.environ['DOCKER_CERT_PATH'] = cert.rstrip()
-  os.environ['DOCKER_HOST'] = host.rstrip()
-  os.environ['DOCKER_TLS_VERIFY'] = tls.rstrip()
 
 if __name__ == "__main__":
   c = utils.parse_log_config('../logging.yaml')
@@ -363,11 +349,7 @@ if __name__ == "__main__":
   p_logger = logging.getLogger('paramiko')
   p_logger.setLevel(logging.INFO)
 
-  get_boot2docker_environ()
-  from docker.utils import kwargs_from_env
-  client = docker.Client(**kwargs_from_env(assert_hostname=False))
-
-  host_ip = subprocess.check_output('/usr/local/bin/boot2docker ip', shell=True).rstrip()
+  (host_ip,client) = get_docker()
 
   def framework_run():
     with cd('~/FrameworkBenchmarks'):
