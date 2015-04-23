@@ -8,6 +8,14 @@ import argparse
 import logging
 import pprint
 
+logging.addLevelName(logging.ERROR, 'err')
+logging.addLevelName(logging.CRITICAL, 'crit')
+logging.addLevelName(logging.INFO, 'info')
+logging.addLevelName(logging.DEBUG, 'debug')
+logging.addLevelName(logging.WARN, 'warn')
+logging.basicConfig(level=logging.INFO, format='%(levelname)-4s:%(filename)-.9s:%(funcName)-.9s: %(message)s')
+log = logging.getLogger(__name__)
+
 from webjuice import app
 from webjuice import socketio
 from webjuice import celeryapp
@@ -17,14 +25,6 @@ def handle_message(message):
   log.info("received message: %s", message)
   
 if __name__ == "__main__":
-
-  logging.addLevelName(logging.ERROR, 'err')
-  logging.addLevelName(logging.CRITICAL, 'crit')
-  logging.addLevelName(logging.INFO, 'info')
-  logging.addLevelName(logging.DEBUG, 'debug')
-  logging.addLevelName(logging.WARN, 'warn')
-  logging.basicConfig(level=logging.INFO, format='%(levelname)-4s:%(filename)-.9s:%(funcName)-.9s: %(message)s')
-  log = logging.getLogger(__name__)
   
   parser = argparse.ArgumentParser(description='Run webserver')
   parser.add_argument('--broker', required=True, help='Celery Broker URL')
@@ -64,5 +64,4 @@ if __name__ == "__main__":
   #c = controller.Controller()
   
   app.debug = args.debug
-  
   socketio.run(app, host='0.0.0.0', port=args.port)
