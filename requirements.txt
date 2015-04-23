@@ -1,4 +1,14 @@
+greenlet
+gevent
+gevent-websocket
+flask-socketio
+flask
+flask-debugtoolbar
+flask-debugtoolbar-lineprofilerpanel
+
+peewee
 SQLAlchemy==0.7.10
+
 python-statsd==1.7.2
 quick-orm==0.4.4
 toolkit-library==0.4.8
@@ -8,10 +18,6 @@ fabric
 docker-py
 pyaml
 colorlog
-Flask
-flask-debugtoolbar
-flask-debugtoolbar-lineprofilerpanel
-peewee
 pyjade
 celery
 flower

@@ -9,7 +9,12 @@ import logging
 import pprint
 
 from webjuice import app
+from webjuice import socketio
 from webjuice import celeryapp
+
+@socketio.on('my event')
+def handle_message(message):
+  log.info("received message: %s", message)
   
 if __name__ == "__main__":
 
@@ -58,5 +63,6 @@ if __name__ == "__main__":
   #from webjuice import controller
   #c = controller.Controller()
   
-  app.run(debug=args.debug, host='0.0.0.0', port=args.port)
-
+  app.debug = args.debug
+  
+  socketio.run(app, host='0.0.0.0', port=args.port)
