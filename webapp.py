@@ -20,9 +20,15 @@ from webjuice import app
 from webjuice import socketio
 from webjuice import celeryapp
 
+from flask.ext.socketio import send, emit
+import time
+
 @socketio.on('my event')
 def handle_message(message):
   log.info("received message: %s", message)
+  for i in xrange(20):
+    emit('data', 'testing\r\n')
+    time.sleep(1)
 
 def running_inside_heroku():
   return "DYNO" in os.environ.keys()
@@ -30,14 +36,14 @@ def running_inside_heroku():
 if __name__ == "__main__":
   
   parser = argparse.ArgumentParser(description='Run webserver')
-  parser.add_argument('--broker', required=True, help='Celery Broker URL')
+  parser.add_argument('--redis', required=True, help='Redis Database URL')
   parser.add_argument('--port', default=int(os.environ.get('PORT', 5000)), type=int, help='Flask HTTP Port')
   parser.add_argument('--debug', default=False, action='store_true', help='Run in Debug Mode and Reload on Code Changes')
   args = parser.parse_args()
   log.info("Started with: %s", pprint.pformat(args))
 
-  celeryapp.conf.update(BROKER_URL = args.broker)
-  celeryapp.conf.update(CELERY_RESULT_BACKEND = args.broker)
+  celeryapp.conf.update(BROKER_URL = args.redis)
+  celeryapp.conf.update(CELERY_RESULT_BACKEND = args.redis)
   celeryapp.conf.update(CELERY_TRACK_STARTED = True)
   
   # When we are in debug mode, expose a nice toolbar

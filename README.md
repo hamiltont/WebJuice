@@ -9,7 +9,7 @@ Requirements and Installation
 [![Inline docs](http://inch-ci.org/github/hamiltont/WebJuice.svg?branch=master)](http://inch-ci.org/github/hamiltont/WebJuice)
 [![Code Climate](https://codeclimate.com/github/hamiltont/WebJuice.png)](https://codeclimate.com/github/hamiltont/WebJuice)
 
-Requires: Python 2.7.9, Docker, RabbitMQ (Only in Production)
+Requires: Python 2.7.9, Docker, Redis (Only in Production)
 
 **Setup**
 
@@ -24,8 +24,8 @@ source env/bin/activate
 pip install -r requirements.txt
 
 # If running in developer mode, use docker to setup a 
-# container running RabbitMQ
-python start_rabbitmq.py
+# container running Redis
+python start_redis.py
 ```
 
 **Launch**

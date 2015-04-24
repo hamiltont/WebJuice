@@ -8,6 +8,7 @@ flask-debugtoolbar-lineprofilerpanel
 
 peewee
 SQLAlchemy==0.7.10
+redis
 
 python-statsd==1.7.2
 quick-orm==0.4.4
