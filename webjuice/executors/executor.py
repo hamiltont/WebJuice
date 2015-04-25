@@ -53,12 +53,46 @@ import os
 from os.path import dirname,abspath,join
 import json
 import exceptions
+import time
+
+from webjuice import socketio
+from webjuice import rdis
+
+from flask.ext.socketio import send, emit
+
+fabric_log = logging.getLogger("fabric-system")
+fabric_log.addHandler(logging.FileHandler('fab_temp.log'))
 
 from streamlogger import use_logger
 shell_logger = use_logger(__name__)
 log = logging.getLogger(__name__)
 
 from celery import current_app
+
+
+def broadcast(db, channel, event_name, content):
+  """
+  Push relevant details to Redis pub/sub channel 
+  and save to replay log.
+  """
+  timestamp = int(time.time() * 1000)
+  # flatten data to put on queue
+  flattened = json.dumps({'event_name': event_name, 'content': content, 
+                          'timestamp': timestamp})
+  # Notify realtime server that new message is ready.
+  db.publish("mq:{0}".format(channel), flattened)
+  # Save message to replay log
+  db.zadd("replay:{0}".format(channel), flattened, timestamp)
+
+
+@current_app.task(name='webjuice.executors.executor.dump_fake_log')
+def dump_fake_log():
+  log.info("Running rdis dump from background process")
+  log.info("Using redis %s", rdis)
+  for i in xrange(100):
+    broadcast(rdis, 'wjlog', 'somename', "value %s" % i)
+    time.sleep(1)
+  log.info("done running rdis dump from background process")
 
 @current_app.task(name='webjuice.executors.executor.start_docker')
 def start_docker():

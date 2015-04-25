@@ -19,32 +19,29 @@ log = logging.getLogger(__name__)
 from webjuice import app
 from webjuice import socketio
 from webjuice import celeryapp
+from webjuice import pubsub
 
 from flask.ext.socketio import send, emit
 import time
 
-@socketio.on('my event')
-def handle_message(message):
+@socketio.on('my event', namespace='/test')
+def wire_up_socketio(message):
   log.info("received message: %s", message)
-  for i in xrange(20):
-    emit('data', 'testing\r\n')
-    time.sleep(1)
 
 def running_inside_heroku():
   return "DYNO" in os.environ.keys()
   
+def my_handler(message):
+  socketio.emit('data', "Output from Redis: %s\r\n" % message, namespace='/test')
+  print "MY HANDLER: %s" % message
+
 if __name__ == "__main__":
   
   parser = argparse.ArgumentParser(description='Run webserver')
-  parser.add_argument('--redis', required=True, help='Redis Database URL')
   parser.add_argument('--port', default=int(os.environ.get('PORT', 5000)), type=int, help='Flask HTTP Port')
   parser.add_argument('--debug', default=False, action='store_true', help='Run in Debug Mode and Reload on Code Changes')
   args = parser.parse_args()
   log.info("Started with: %s", pprint.pformat(args))
-
-  celeryapp.conf.update(BROKER_URL = args.redis)
-  celeryapp.conf.update(CELERY_RESULT_BACKEND = args.redis)
-  celeryapp.conf.update(CELERY_TRACK_STARTED = True)
   
   # When we are in debug mode, expose a nice toolbar
   if args.debug:
@@ -73,9 +70,18 @@ if __name__ == "__main__":
   #c = controller.Controller()
   
   app.debug = args.debug
+  
+  # Setup server name
   sn = os.environ.get('SERVER_NAME', 'localhost')
   if not running_inside_heroku():
     sn += ':' + str(args.port)
   log.info("Using servername %s", sn)
   app.config['SERVER_NAME'] = sn
+
+  log.info("Subscribing...")
+  p = pubsub.pubsub()
+  p.subscribe(**{'mq:wjlog': my_handler})
+  p.run_in_thread(sleep_time=0.25)
+  log.info("Subscribed")
+  
   socketio.run(app, host='0.0.0.0', port=args.port)

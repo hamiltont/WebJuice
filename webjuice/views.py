@@ -3,7 +3,7 @@ import os
 from webjuice import app
 from webjuice import models
 
-from webjuice.executors.executor import start_docker
+from webjuice.executors.executor import start_docker,dump_fake_log
 
 from flask import render_template
 
@@ -28,6 +28,13 @@ def start_build():
 
   start_docker.delay()
   print "Started remote command"
+  return render_template('queue.jade', youAreUsingJade=True)
+
+@app.route('/logdump')
+def start_logdump():
+  print "Starting remote logdump"
+  dump_fake_log.delay()
+  print "Started logdump"
   return render_template('queue.jade', youAreUsingJade=True)
 
 @app.route('/logs')
